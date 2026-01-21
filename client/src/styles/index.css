@@ -1,0 +1,249 @@
+/**
+ * Global Styles - Meta/Facebook Inspired
+ * =======================================
+ * Clean, professional, minimal design
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =====================
+   CSS Custom Properties
+   ===================== */
+:root {
+    /* Light mode - Facebook style */
+    --color-bg-primary: #ffffff;
+    --color-bg-secondary: #f0f2f5;
+    --color-bg-tertiary: #e4e6eb;
+    --color-text-primary: #050505;
+    --color-text-secondary: #65676b;
+    --color-text-muted: #8a8d91;
+    --color-border: #dadde1;
+    --color-border-hover: #bec3c9;
+    --color-accent: #1877f2;
+}
+
+.dark {
+    /* Dark mode - Facebook dark style */
+    --color-bg-primary: #18191a;
+    --color-bg-secondary: #242526;
+    --color-bg-tertiary: #3a3b3c;
+    --color-text-primary: #e4e6eb;
+    --color-text-secondary: #b0b3b8;
+    --color-text-muted: #8a8d91;
+    --color-border: #3a3b3c;
+    --color-border-hover: #4e4f50;
+    --color-accent: #2d88ff;
+}
+
+/* =====================
+   Base Styles
+   ===================== */
+@layer base {
+    html {
+        @apply scroll-smooth;
+    }
+
+    body {
+        @apply bg-neutral-100 text-neutral-900 antialiased;
+        @apply dark:bg-neutral-900 dark:text-neutral-100;
+        font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    /* Focus styles */
+    *:focus-visible {
+        @apply outline-none ring-2 ring-primary-500 ring-offset-2;
+        @apply dark:ring-offset-neutral-900;
+    }
+
+    *:focus:not(:focus-visible) {
+        @apply outline-none ring-0;
+    }
+
+    /* Headings */
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        @apply font-semibold text-neutral-900 dark:text-neutral-50;
+    }
+
+    h1 {
+        @apply text-2xl md:text-3xl;
+    }
+
+    h2 {
+        @apply text-xl md:text-2xl;
+    }
+
+    h3 {
+        @apply text-lg md:text-xl;
+    }
+
+    h4 {
+        @apply text-base md:text-lg font-medium;
+    }
+}
+
+/* =====================
+   Component Styles
+   ===================== */
+@layer components {
+
+    /* Card - Facebook style */
+    .card {
+        @apply bg-white rounded-lg shadow-card;
+        @apply dark:bg-neutral-800;
+    }
+
+    /* Button variants - Meta style */
+    .btn {
+        @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md font-semibold text-sm;
+        @apply transition-all duration-150 ease-out;
+        @apply focus-visible:ring-2 focus-visible:ring-offset-2;
+        @apply disabled:opacity-50 disabled:cursor-not-allowed;
+    }
+
+    .btn-primary {
+        @apply btn bg-primary-500 text-white;
+        @apply hover:bg-primary-600 active:scale-[0.98];
+        @apply focus-visible:ring-primary-500;
+    }
+
+    .btn-secondary {
+        @apply btn bg-neutral-150 text-neutral-900;
+        @apply hover:bg-neutral-200 active:scale-[0.98];
+        @apply dark:bg-neutral-700 dark:text-neutral-100;
+        @apply dark:hover:bg-neutral-600;
+        @apply focus-visible:ring-neutral-500;
+    }
+
+    .btn-ghost {
+        @apply btn bg-transparent text-neutral-600;
+        @apply hover:bg-neutral-100 active:bg-neutral-200;
+        @apply dark:text-neutral-400 dark:hover:bg-neutral-700;
+    }
+
+    .btn-danger {
+        @apply btn bg-error text-white;
+        @apply hover:bg-error-dark;
+        @apply focus-visible:ring-error;
+    }
+
+    .btn-link {
+        @apply text-primary-500 hover:underline font-semibold text-sm;
+        @apply dark:text-primary-400;
+    }
+
+    /* Input - Facebook style */
+    .input {
+        @apply w-full px-4 py-3 rounded-md border border-neutral-300;
+        @apply bg-neutral-100 text-neutral-900 placeholder:text-neutral-500;
+        @apply transition-colors duration-150;
+        @apply focus:bg-white focus:border-primary-500;
+        @apply dark:bg-neutral-700 dark:border-neutral-600 dark:text-neutral-100;
+        @apply dark:placeholder:text-neutral-400;
+        @apply dark:focus:bg-neutral-800 dark:focus:border-primary-400;
+    }
+
+    .input-error {
+        @apply border-error focus:border-error;
+    }
+
+    /* Label */
+    .label {
+        @apply block text-sm font-medium text-neutral-700 mb-1.5;
+        @apply dark:text-neutral-300;
+    }
+
+    /* Link */
+    .link {
+        @apply text-primary-500 hover:underline;
+        @apply dark:text-primary-400;
+        @apply transition-colors duration-150;
+    }
+
+    /* Divider with text */
+    .divider-text {
+        @apply flex items-center gap-4 text-sm text-neutral-500;
+    }
+
+    .divider-text::before,
+    .divider-text::after {
+        @apply flex-1 h-px bg-neutral-300 dark:bg-neutral-600;
+        content: '';
+    }
+
+    /* Sidebar */
+    .sidebar-item {
+        @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-700 font-medium;
+        @apply hover:bg-neutral-200 active:bg-neutral-250;
+        @apply dark:text-neutral-300 dark:hover:bg-neutral-700;
+        @apply transition-colors duration-100 cursor-pointer;
+    }
+
+    .sidebar-item-active {
+        @apply bg-primary-50 text-primary-600;
+        @apply dark:bg-primary-900/30 dark:text-primary-400;
+    }
+
+    /* Avatar */
+    .avatar {
+        @apply w-10 h-10 rounded-full bg-neutral-200 dark:bg-neutral-700;
+        @apply flex items-center justify-center text-neutral-600 dark:text-neutral-400 font-semibold;
+    }
+}
+
+/* =====================
+   Utility Classes
+   ===================== */
+@layer utilities {
+
+    /* Hide scrollbar */
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Thin scrollbar */
+    .scrollbar-thin {
+        scrollbar-width: thin;
+        scrollbar-color: theme('colors.neutral.300') transparent;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+        background-color: theme('colors.neutral.300');
+        border-radius: 4px;
+    }
+
+    .dark .scrollbar-thin {
+        scrollbar-color: theme('colors.neutral.600') transparent;
+    }
+
+    .dark .scrollbar-thin::-webkit-scrollbar-thumb {
+        background-color: theme('colors.neutral.600');
+    }
+
+    /* Line clamp */
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+}
