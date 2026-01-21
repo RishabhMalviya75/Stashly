@@ -180,7 +180,7 @@
     /* Sidebar */
     .sidebar-item {
         @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-700 font-medium;
-        @apply hover:bg-neutral-200 active:bg-neutral-250;
+        @apply hover:bg-neutral-200 active:bg-neutral-300;
         @apply dark:text-neutral-300 dark:hover:bg-neutral-700;
         @apply transition-colors duration-100 cursor-pointer;
     }
