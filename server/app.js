@@ -130,9 +130,9 @@ app.get('/api/health', (req, res) => {
 // Authentication routes
 app.use('/api/auth', authRoutes);
 
-// TODO: Add more routes as we build features
-// app.use('/api/folders', require('./routes/folders'));
-// app.use('/api/resources', require('./routes/resources'));
+// Resource management routes
+app.use('/api/folders', require('./routes/folders'));
+app.use('/api/resources', require('./routes/resources'));
 
 // ==============
 // ERROR HANDLERS
