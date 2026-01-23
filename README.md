@@ -113,9 +113,9 @@ Stashly/
 ## Roadmap
 
 - [x] Week 1: Project Setup & Authentication
-- [ ] Week 2: Core Resource Management (CRUD)
-- [ ] Week 3: UI Implementation (Sidebar, Forms)
-- [ ] Week 4: Search & Polish
+- [x] Week 2: Core Resource Management (CRUD)
+- [x] Week 3: UI Implementation (Sidebar, Forms)
+- [x] Week 4: Search & Polish
 
 ## License
 

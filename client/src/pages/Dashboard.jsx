@@ -50,7 +50,7 @@ export default function Dashboard() {
     const [isLoading, setIsLoading] = useState(true);
     const [currentView, setCurrentView] = useState('home');
     const [selectedFolderId, setSelectedFolderId] = useState(null);
-    const [searchQuery, setSearchQuery] = useState('');
+
     const [filterType, setFilterType] = useState(null);
 
     // Modal states
@@ -128,9 +128,7 @@ export default function Dashboard() {
                 params.type = filterType;
             }
 
-            if (searchQuery) {
-                params.search = searchQuery;
-            }
+
 
             const res = await resourceAPI.getAll(params);
             setResources(res.data.data.resources);
@@ -140,7 +138,7 @@ export default function Dashboard() {
         } finally {
             setIsLoading(false);
         }
-    }, [currentView, selectedFolderId, filterType, searchQuery]);
+    }, [currentView, selectedFolderId, filterType]);
 
     // Fetch on mount and when filters change
     useEffect(() => {
@@ -212,11 +210,7 @@ export default function Dashboard() {
         setSelectedFolderId(null);
     };
 
-    // Handle search
-    const handleSearch = (e) => {
-        e.preventDefault();
-        fetchResources();
-    };
+
 
     // Toggle dark mode quickly
     const toggleDarkMode = () => {
@@ -263,18 +257,16 @@ export default function Dashboard() {
                     <h1 className="text-xl font-bold text-primary-500">Stashly</h1>
                 </div>
 
-                {/* Search */}
+                {/* Search Trigger - Opens SearchModal (Ctrl+K) */}
                 <div className="p-3">
-                    <form onSubmit={handleSearch} className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Search resources..."
-                            className="w-full pl-10 pr-4 py-2 text-sm bg-neutral-100 dark:bg-neutral-700 rounded-lg border-0 focus:ring-2 focus:ring-primary-500"
-                        />
-                    </form>
+                    <button
+                        onClick={() => setIsSearchOpen(true)}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-neutral-500 bg-neutral-100 dark:bg-neutral-700 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-600 transition-colors"
+                    >
+                        <Search className="w-4 h-4" />
+                        <span className="flex-1 text-left">Search...</span>
+                        <kbd className="px-1.5 py-0.5 text-xs bg-neutral-200 dark:bg-neutral-600 rounded">⌘K</kbd>
+                    </button>
                 </div>
 
                 {/* Folder Navigation */}
@@ -328,16 +320,6 @@ export default function Dashboard() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        {/* Global Search Button */}
-                        <button
-                            onClick={() => setIsSearchOpen(true)}
-                            className="flex items-center gap-2 px-3 py-1.5 text-sm text-neutral-500 bg-neutral-100 dark:bg-neutral-700 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-600 transition-colors"
-                            title="Search (Ctrl+K)"
-                        >
-                            <Search className="w-4 h-4" />
-                            <span className="hidden md:inline">Search</span>
-                            <kbd className="hidden md:inline px-1.5 py-0.5 ml-1 text-xs bg-neutral-200 dark:bg-neutral-600 rounded">⌘K</kbd>
-                        </button>
                         {/* Dark mode toggle */}
                         <button
                             onClick={toggleDarkMode}
@@ -443,10 +425,9 @@ export default function Dashboard() {
                                 setIsModalOpen(true);
                             }}
                             emptyType={
-                                searchQuery ? 'noSearchResults' :
-                                    currentView === 'favorites' ? 'noFavorites' :
-                                        currentView === 'folder' ? 'noFolderResources' :
-                                            'noResources'
+                                currentView === 'favorites' ? 'noFavorites' :
+                                    currentView === 'folder' ? 'noFolderResources' :
+                                        'noResources'
                             }
                         />
                     </div>
