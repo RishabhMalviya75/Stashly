@@ -282,6 +282,28 @@
         }
     }
 
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes shimmer {
+        0% {
+            background-position: -200% 0;
+        }
+
+        100% {
+            background-position: 200% 0;
+        }
+    }
+
     .animate-fadeIn {
         animation: fadeIn 0.15s ease-out;
     }
@@ -292,5 +314,65 @@
 
     .animate-slideUp {
         animation: slideUp 0.2s ease-out;
+    }
+
+    .animate-slideInRight {
+        animation: slideInRight 0.2s ease-out;
+    }
+
+    /* Staggered card animations */
+    .card {
+        animation: slideUp 0.3s ease-out backwards;
+    }
+
+    .card:nth-child(1) {
+        animation-delay: 0.05s;
+    }
+
+    .card:nth-child(2) {
+        animation-delay: 0.1s;
+    }
+
+    .card:nth-child(3) {
+        animation-delay: 0.15s;
+    }
+
+    .card:nth-child(4) {
+        animation-delay: 0.2s;
+    }
+
+    .card:nth-child(5) {
+        animation-delay: 0.25s;
+    }
+
+    .card:nth-child(6) {
+        animation-delay: 0.3s;
+    }
+
+    /* Enhanced skeleton shimmer */
+    .animate-pulse {
+        animation: shimmer 1.5s infinite;
+        background: linear-gradient(90deg,
+                theme('colors.neutral.200') 25%,
+                theme('colors.neutral.100') 50%,
+                theme('colors.neutral.200') 75%);
+        background-size: 200% 100%;
+    }
+
+    .dark .animate-pulse {
+        background: linear-gradient(90deg,
+                theme('colors.neutral.700') 25%,
+                theme('colors.neutral.600') 50%,
+                theme('colors.neutral.700') 75%);
+        background-size: 200% 100%;
+    }
+
+    /* Hover lift effect for cards */
+    .card-hover {
+        @apply transition-all duration-200;
+    }
+
+    .card-hover:hover {
+        @apply shadow-elevated -translate-y-0.5;
     }
 }

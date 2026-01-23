@@ -64,9 +64,10 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // Stricter rate limit for auth endpoints (prevent brute force)
+// Higher limit in development for testing
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 10, // Only 10 login attempts per 15 minutes
+    max: process.env.NODE_ENV === 'production' ? 10 : 50, // 10 in prod, 50 in dev
     message: {
         success: false,
         message: 'Too many login attempts, please try again later.'

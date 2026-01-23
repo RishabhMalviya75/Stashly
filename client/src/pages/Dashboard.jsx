@@ -21,7 +21,8 @@ import {
     ChevronDown,
     RefreshCw,
     Moon,
-    Sun
+    Sun,
+    Command
 } from 'lucide-react';
 import { resourceAPI } from '../services/api';
 import ResourceModal from '../components/AddResourceModal';
@@ -30,6 +31,7 @@ import FolderSidebar from '../components/FolderSidebar';
 import ConfirmDialog from '../components/ConfirmDialog';
 import SettingsPanel from '../components/SettingsPanel';
 import ResourceDetailView from '../components/ResourceDetailView';
+import SearchModal from '../components/SearchModal';
 
 // Resource type config for quick add buttons
 const RESOURCE_TYPES = [
@@ -66,6 +68,9 @@ export default function Dashboard() {
     const [selectedResource, setSelectedResource] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
+    // Global search modal
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
+
     // Dark mode quick toggle
     const [isDark, setIsDark] = useState(() => {
         return document.documentElement.classList.contains('dark');
@@ -83,6 +88,11 @@ export default function Dashboard() {
     // Keyboard shortcuts
     useEffect(() => {
         const handleKeyDown = (e) => {
+            // Ctrl/Cmd + K: Open search
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                setIsSearchOpen(true);
+            }
             // Ctrl/Cmd + N: New resource
             if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
                 e.preventDefault();
@@ -91,14 +101,15 @@ export default function Dashboard() {
             }
             // Escape: Close modals
             if (e.key === 'Escape') {
-                if (isModalOpen) setIsModalOpen(false);
-                if (isSettingsOpen) setIsSettingsOpen(false);
+                if (isSearchOpen) setIsSearchOpen(false);
+                else if (isModalOpen) setIsModalOpen(false);
+                else if (isSettingsOpen) setIsSettingsOpen(false);
             }
         };
 
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [isModalOpen, isSettingsOpen]);
+    }, [isModalOpen, isSettingsOpen, isSearchOpen]);
 
     // Fetch resources
     const fetchResources = useCallback(async () => {
@@ -317,6 +328,16 @@ export default function Dashboard() {
                     </div>
 
                     <div className="flex items-center gap-2">
+                        {/* Global Search Button */}
+                        <button
+                            onClick={() => setIsSearchOpen(true)}
+                            className="flex items-center gap-2 px-3 py-1.5 text-sm text-neutral-500 bg-neutral-100 dark:bg-neutral-700 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-600 transition-colors"
+                            title="Search (Ctrl+K)"
+                        >
+                            <Search className="w-4 h-4" />
+                            <span className="hidden md:inline">Search</span>
+                            <kbd className="hidden md:inline px-1.5 py-0.5 ml-1 text-xs bg-neutral-200 dark:bg-neutral-600 rounded">⌘K</kbd>
+                        </button>
                         {/* Dark mode toggle */}
                         <button
                             onClick={toggleDarkMode}
@@ -417,10 +438,15 @@ export default function Dashboard() {
                             onDelete={handleDeleteRequest}
                             onEdit={handleEdit}
                             onClick={(resource) => setSelectedResource(resource)}
-                            emptyMessage={
-                                currentView === 'favorites'
-                                    ? "You haven't favorited any resources yet. Star a resource to add it here."
-                                    : "No resources found. Click 'Add Resource' to create your first one!"
+                            onAdd={() => {
+                                setEditResource(null);
+                                setIsModalOpen(true);
+                            }}
+                            emptyType={
+                                searchQuery ? 'noSearchResults' :
+                                    currentView === 'favorites' ? 'noFavorites' :
+                                        currentView === 'folder' ? 'noFolderResources' :
+                                            'noResources'
                             }
                         />
                     </div>
@@ -466,6 +492,13 @@ export default function Dashboard() {
                 onEdit={handleEdit}
                 onDelete={handleDeleteRequest}
                 onFavorite={handleFavorite}
+            />
+
+            {/* Global Search Modal (Cmd/Ctrl + K) */}
+            <SearchModal
+                isOpen={isSearchOpen}
+                onClose={() => setIsSearchOpen(false)}
+                onSelectResource={(resource) => setSelectedResource(resource)}
             />
         </div>
     );
