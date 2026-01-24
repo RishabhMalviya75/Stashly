@@ -41,44 +41,34 @@ app.set('trust proxy', 1);
 // SECURITY MIDDLEWARE
 // ===================
 
-// Handle CORS preflight requests FIRST (before any other middleware)
-app.use((req, res, next) => {
-    const origin = req.headers.origin;
-
-    // Allow these origins
-    const allowedOrigins = [
-        'http://localhost:3000',
-        'https://stashly-k535.vercel.app',
-        process.env.CLIENT_URL
-    ].filter(Boolean);
-
-    if (origin && (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app'))) {
-        res.setHeader('Access-Control-Allow-Origin', origin);
-    }
-
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-
-    // Handle preflight
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
-
-    next();
-});
-
-// Helmet: Set security-related HTTP headers (with CORS-friendly config)
+// Helmet hooks
 app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
-// CORS: Configure Cross-Origin Resource Sharing (redundant but kept for compatibility)
+// CORS Configuration
+const allowedOrigins = [
+    'http://localhost:3000',
+    'https://stashly-k535.vercel.app',
+    process.env.CLIENT_URL
+].filter(Boolean);
+
 app.use(cors({
-    origin: true,
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+
+        // Check if origin is allowed
+        if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) {
+            callback(null, true);
+        } else {
+            console.log('Blocked by CORS:', origin);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRF-Token', 'Accept', 'Accept-Version', 'Content-Length', 'Content-MD5', 'Date', 'X-Api-Version']
 }));
 
 // Rate Limiting: Prevent brute force attacks
