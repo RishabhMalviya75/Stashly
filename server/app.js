@@ -38,35 +38,42 @@ const app = express();
 // SECURITY MIDDLEWARE
 // ===================
 
-// Helmet: Set security-related HTTP headers
-app.use(helmet());
+// Handle CORS preflight requests FIRST (before any other middleware)
+app.use((req, res, next) => {
+    const origin = req.headers.origin;
 
-// CORS: Configure Cross-Origin Resource Sharing
-const allowedOrigins = [
-    process.env.CLIENT_URL,
-    'http://localhost:3000',
-    'https://stashly-k535.vercel.app',
-    /\.vercel\.app$/  // Allow all Vercel preview deployments
-].filter(Boolean);
+    // Allow these origins
+    const allowedOrigins = [
+        'http://localhost:3000',
+        'https://stashly-k535.vercel.app',
+        process.env.CLIENT_URL
+    ].filter(Boolean);
 
+    if (origin && (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app'))) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+
+    // Handle preflight
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
+    next();
+});
+
+// Helmet: Set security-related HTTP headers (with CORS-friendly config)
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+
+// CORS: Configure Cross-Origin Resource Sharing (redundant but kept for compatibility)
 app.use(cors({
-    origin: function (origin, callback) {
-        // Allow requests with no origin (mobile apps, curl, etc)
-        if (!origin) return callback(null, true);
-
-        // Check if origin is allowed
-        const isAllowed = allowedOrigins.some(allowed => {
-            if (allowed instanceof RegExp) return allowed.test(origin);
-            return allowed === origin;
-        });
-
-        if (isAllowed) {
-            callback(null, true);
-        } else {
-            callback(null, true); // Allow all for now, can restrict later
-        }
-    },
-    credentials: true, // Allow cookies to be sent
+    origin: true,
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
