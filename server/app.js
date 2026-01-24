@@ -34,6 +34,9 @@ const authRoutes = require('./routes/auth');
 
 const app = express();
 
+// Trust Vercel's proxy (required for secure cookies)
+app.set('trust proxy', 1);
+
 // ===================
 // SECURITY MIDDLEWARE
 // ===================
