@@ -15,7 +15,7 @@
  *    with existing data and calls update API instead of create.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import {
@@ -26,9 +26,12 @@ import {
     FileText,
     StickyNote,
     Loader2,
-    FolderOpen
+    FolderOpen,
+    Upload,
+    File,
+    Trash2
 } from 'lucide-react';
-import { resourceAPI, folderAPI } from '../services/api';
+import { resourceAPI, folderAPI, uploadAPI } from '../services/api';
 
 // Resource type configuration
 const RESOURCE_TYPES = [
@@ -50,6 +53,13 @@ export default function ResourceModal({
     const [selectedType, setSelectedType] = useState(defaultType);
     const [folders, setFolders] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // File upload state
+    const [uploadedFile, setUploadedFile] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [isDragging, setIsDragging] = useState(false);
+    const fileInputRef = useRef(null);
 
     const {
         register,
@@ -103,6 +113,8 @@ export default function ResourceModal({
                     tags: ''
                 });
                 setSelectedType(defaultType);
+                setUploadedFile(null);
+                setUploadProgress(0);
             }
         }
     }, [isOpen, isEditMode, editResource, defaultType, reset, setValue]);
@@ -120,6 +132,75 @@ export default function ResourceModal({
             setValue('fileName', '');
         }
     }, [selectedType, isOpen, isEditMode, setValue]);
+
+    // Handle file upload
+    const handleFileUpload = async (file) => {
+        if (!file) return;
+
+        // Validate file size (10MB limit)
+        if (file.size > 10 * 1024 * 1024) {
+            toast.error('File size must be less than 10MB');
+            return;
+        }
+
+        setIsUploading(true);
+        setUploadProgress(0);
+
+        try {
+            const response = await uploadAPI.upload(file, (progressEvent) => {
+                const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                setUploadProgress(progress);
+            });
+
+            const fileData = response.data.data;
+            setUploadedFile(fileData);
+            setValue('fileUrl', fileData.fileUrl);
+            setValue('fileName', fileData.fileName);
+            toast.success('File uploaded successfully!');
+        } catch (error) {
+            console.error('Upload error:', error);
+            toast.error(error.response?.data?.message || 'Failed to upload file');
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    // Handle file removal
+    const handleRemoveFile = async () => {
+        if (uploadedFile?.publicId) {
+            try {
+                await uploadAPI.delete(uploadedFile.publicId);
+            } catch (error) {
+                console.error('Failed to delete file:', error);
+            }
+        }
+        setUploadedFile(null);
+        setValue('fileUrl', '');
+        setValue('fileName', '');
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    // Drag and drop handlers
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e) => {
+        e.preventDefault();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        setIsDragging(false);
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            handleFileUpload(file);
+        }
+    };
 
     // Handle form submission
     const onSubmit = async (data) => {
@@ -150,8 +231,11 @@ export default function ResourceModal({
                     payload.description = data.description || '';
                     break;
                 case 'document':
-                    payload.fileUrl = data.fileUrl || '';
-                    payload.fileName = data.fileName || '';
+                    payload.fileUrl = data.fileUrl || uploadedFile?.fileUrl || '';
+                    payload.fileName = data.fileName || uploadedFile?.fileName || '';
+                    payload.fileSize = uploadedFile?.fileSize || 0;
+                    payload.fileType = uploadedFile?.fileType || '';
+                    payload.cloudinaryPublicId = uploadedFile?.publicId || '';
                     payload.description = data.description || '';
                     break;
                 case 'note':
@@ -168,6 +252,8 @@ export default function ResourceModal({
             }
 
             reset();
+            setUploadedFile(null);
+            setUploadProgress(0);
             onSuccess?.();
             onClose();
         } catch (error) {
@@ -329,27 +415,100 @@ export default function ResourceModal({
                             </div>
                         )}
 
-                        {/* File URL & Name - Document only */}
+                        {/* File Upload - Document only */}
                         {selectedType === 'document' && (
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium mb-1">File URL</label>
-                                    <input
-                                        {...register('fileUrl')}
-                                        type="url"
-                                        placeholder="https://example.com/doc.pdf"
-                                        className="input w-full"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium mb-1">File Name</label>
-                                    <input
-                                        {...register('fileName')}
-                                        type="text"
-                                        placeholder="document.pdf"
-                                        className="input w-full"
-                                    />
-                                </div>
+                            <div className="space-y-3">
+                                <label className="block text-sm font-medium mb-1">
+                                    Upload File
+                                </label>
+
+                                {!uploadedFile && !isEditMode ? (
+                                    <div
+                                        onDragOver={handleDragOver}
+                                        onDragLeave={handleDragLeave}
+                                        onDrop={handleDrop}
+                                        className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer
+                                            ${isDragging
+                                                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                                                : 'border-neutral-300 dark:border-neutral-600 hover:border-primary-400 hover:bg-neutral-50 dark:hover:bg-neutral-700/50'
+                                            }
+                                            ${isUploading ? 'pointer-events-none opacity-60' : ''}
+                                        `}
+                                        onClick={() => fileInputRef.current?.click()}
+                                    >
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            className="hidden"
+                                            onChange={(e) => handleFileUpload(e.target.files[0])}
+                                            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.jpeg,.png,.gif,.webp,.svg,.zip,.rar,.json"
+                                        />
+
+                                        {isUploading ? (
+                                            <div className="space-y-3">
+                                                <Loader2 className="w-10 h-10 mx-auto text-primary-500 animate-spin" />
+                                                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                                                    Uploading... {uploadProgress}%
+                                                </p>
+                                                <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
+                                                    <div
+                                                        className="bg-primary-500 h-2 rounded-full transition-all duration-300"
+                                                        style={{ width: `${uploadProgress}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <Upload className="w-10 h-10 mx-auto text-neutral-400 mb-3" />
+                                                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                                                    <span className="font-medium text-primary-500">Click to upload</span>
+                                                    {' '}or drag and drop
+                                                </p>
+                                                <p className="text-xs text-neutral-500 mt-1">
+                                                    PDF, DOC, XLS, PPT, images, and more (max 10MB)
+                                                </p>
+                                            </>
+                                        )}
+                                    </div>
+                                ) : uploadedFile || (isEditMode && editResource?.fileUrl) ? (
+                                    <div className="flex items-center gap-3 p-4 bg-neutral-100 dark:bg-neutral-700 rounded-xl">
+                                        <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                                            <File className="w-6 h-6 text-orange-500" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium truncate">
+                                                {uploadedFile?.fileName || editResource?.fileName || 'Uploaded file'}
+                                            </p>
+                                            {uploadedFile?.fileSize && (
+                                                <p className="text-xs text-neutral-500">
+                                                    {(uploadedFile.fileSize / 1024).toFixed(1)} KB
+                                                </p>
+                                            )}
+                                        </div>
+                                        <a
+                                            href={uploadedFile?.fileUrl || editResource?.fileUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-sm text-primary-500 hover:underline"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            View
+                                        </a>
+                                        {!isEditMode && (
+                                            <button
+                                                type="button"
+                                                onClick={handleRemoveFile}
+                                                className="p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        )}
+                                    </div>
+                                ) : null}
+
+                                {/* Hidden inputs for form data */}
+                                <input type="hidden" {...register('fileUrl')} />
+                                <input type="hidden" {...register('fileName')} />
                             </div>
                         )}
 

@@ -14,15 +14,8 @@ const connectDB = async () => {
     // Get the connection URI
     let mongoUri = process.env.MONGODB_URI;
 
-    // Ensure proper TLS settings in the connection string
-    // This fixes Node.js 22 + MongoDB Atlas SSL issues
-    if (mongoUri && !mongoUri.includes('tls=true')) {
-      const separator = mongoUri.includes('?') ? '&' : '?';
-      mongoUri = `${mongoUri}${separator}tls=true&tlsInsecure=true`;
-    }
-
     const conn = await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 10000,
+      serverSelectionTimeoutMS: 30000,
       socketTimeoutMS: 45000,
     });
 

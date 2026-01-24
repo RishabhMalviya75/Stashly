@@ -300,10 +300,17 @@ export default function FolderSidebar({
                         </div>
                     ) : (
                         // Normal display
-                        <button
+                        <div
                             onClick={() => onFolderSelect?.(folder._id)}
                             onContextMenu={(e) => handleContextMenu(e, folder._id)}
-                            className={`sidebar-item w-full group ${selectedFolderId === folder._id ? 'sidebar-item-active' : ''
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    onFolderSelect?.(folder._id);
+                                }
+                            }}
+                            className={`sidebar-item w-full group cursor-pointer ${selectedFolderId === folder._id ? 'sidebar-item-active' : ''
                                 }`}
                         >
                             <Folder
@@ -311,16 +318,24 @@ export default function FolderSidebar({
                                 style={{ color: folder.color }}
                             />
                             <span className="flex-1 text-left truncate">{folder.name}</span>
-                            <button
+                            <span
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     handleContextMenu(e, folder._id);
                                 }}
-                                className="p-1 opacity-0 group-hover:opacity-100 hover:bg-neutral-200 dark:hover:bg-neutral-600 rounded transition-opacity"
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.stopPropagation();
+                                        handleContextMenu(e, folder._id);
+                                    }
+                                }}
+                                className="p-1 opacity-0 group-hover:opacity-100 hover:bg-neutral-200 dark:hover:bg-neutral-600 rounded transition-opacity cursor-pointer"
                             >
                                 <MoreVertical className="w-3 h-3" />
-                            </button>
-                        </button>
+                            </span>
+                        </div>
                     )}
                 </div>
             ))}

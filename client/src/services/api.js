@@ -97,4 +97,22 @@ export const resourceAPI = {
     search: (query) => api.get('/resources/search', { params: { q: query } }),
 };
 
+// =====================
+// Upload API Functions
+// =====================
+
+export const uploadAPI = {
+    // Upload a file (for documents)
+    upload: (file, onProgress) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        return api.post('/upload', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+            onUploadProgress: onProgress
+        });
+    },
+    // Delete a file from Cloudinary
+    delete: (publicId) => api.delete(`/upload/${encodeURIComponent(publicId)}`)
+};
+
 export default api;

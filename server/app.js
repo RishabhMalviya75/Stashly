@@ -134,6 +134,7 @@ app.use('/api/auth', authRoutes);
 // Resource management routes
 app.use('/api/folders', require('./routes/folders'));
 app.use('/api/resources', require('./routes/resources'));
+app.use('/api/upload', require('./routes/upload'));
 
 // ==============
 // ERROR HANDLERS

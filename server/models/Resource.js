@@ -159,6 +159,12 @@ const resourceSchema = new mongoose.Schema({
         trim: true
     },
 
+    // Cloudinary public ID for file management
+    cloudinaryPublicId: {
+        type: String,
+        trim: true
+    },
+
     // ====================
     // SHARED CONTENT FIELD
     // Used by: prompt, snippet, note
