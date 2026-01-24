@@ -85,6 +85,16 @@ export default function SearchModal({ isOpen, onClose, onSelectResource }) {
         }
     }, [isOpen]);
 
+    // Lock body scroll when modal is open
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isOpen]);
+
     // Search when debounced query changes
     useEffect(() => {
         const searchResources = async () => {
@@ -181,7 +191,7 @@ export default function SearchModal({ isOpen, onClose, onSelectResource }) {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]">
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-0 md:pt-[15vh]">
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fadeIn"
@@ -190,7 +200,7 @@ export default function SearchModal({ isOpen, onClose, onSelectResource }) {
 
             {/* Modal */}
             <div
-                className="relative w-full max-w-2xl bg-white dark:bg-neutral-800 rounded-xl shadow-2xl overflow-hidden animate-scaleIn"
+                className="relative w-full h-full md:h-auto md:max-w-2xl bg-white dark:bg-neutral-800 md:rounded-xl shadow-2xl overflow-hidden animate-scaleIn"
                 onKeyDown={handleKeyDown}
             >
                 {/* Search Input */}
@@ -245,8 +255,8 @@ export default function SearchModal({ isOpen, onClose, onSelectResource }) {
                                         key={resource._id}
                                         onClick={() => handleResultClick(resource)}
                                         className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${isSelected
-                                                ? 'bg-primary-50 dark:bg-primary-900/20'
-                                                : 'hover:bg-neutral-50 dark:hover:bg-neutral-700/50'
+                                            ? 'bg-primary-50 dark:bg-primary-900/20'
+                                            : 'hover:bg-neutral-50 dark:hover:bg-neutral-700/50'
                                             }`}
                                     >
                                         <div className={`p-2 rounded-lg ${getTypeColor(resource.type)}`}>

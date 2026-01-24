@@ -70,6 +70,16 @@ export default function SettingsPanel({ isOpen, onClose }) {
         return () => document.removeEventListener('keydown', handleEscape);
     }, [isOpen, onClose]);
 
+    // Lock body scroll when panel is open
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
     const themeOptions = [

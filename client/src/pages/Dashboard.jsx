@@ -22,7 +22,11 @@ import {
     RefreshCw,
     Moon,
     Sun,
-    Command
+    Command,
+    Menu,
+    X,
+    Home,
+    Heart
 } from 'lucide-react';
 import { resourceAPI } from '../services/api';
 import ResourceModal from '../components/AddResourceModal';
@@ -71,6 +75,9 @@ export default function Dashboard() {
     // Global search modal
     const [isSearchOpen, setIsSearchOpen] = useState(false);
 
+    // Mobile sidebar drawer
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
     // Dark mode quick toggle
     const [isDark, setIsDark] = useState(() => {
         return document.documentElement.classList.contains('dark');
@@ -93,8 +100,8 @@ export default function Dashboard() {
                 e.preventDefault();
                 setIsSearchOpen(true);
             }
-            // Ctrl/Cmd + N: New resource
-            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+            // Alt + N: New resource
+            if (e.altKey && e.key === 'n') {
                 e.preventDefault();
                 setEditResource(null);
                 setIsModalOpen(true);
@@ -110,6 +117,15 @@ export default function Dashboard() {
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [isModalOpen, isSettingsOpen, isSearchOpen]);
+
+    // Lock body scroll when mobile sidebar is open
+    useEffect(() => {
+        if (isSidebarOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+    }, [isSidebarOpen]);
 
     // Fetch resources
     const fetchResources = useCallback(async () => {
@@ -250,37 +266,58 @@ export default function Dashboard() {
 
     return (
         <div className="min-h-screen bg-neutral-100 dark:bg-neutral-900 flex">
-            {/* Sidebar */}
-            <aside className="w-64 bg-white dark:bg-neutral-800 border-r border-neutral-200 dark:border-neutral-700 flex flex-col">
-                {/* Logo */}
-                <div className="p-4 border-b border-neutral-200 dark:border-neutral-700">
+            {/* Mobile Sidebar Backdrop */}
+            {isSidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black/50 z-40 md:hidden"
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+            )}
+
+            {/* Sidebar - Hidden on mobile, shown as drawer when open */}
+            <aside className={`
+                fixed md:static inset-y-0 left-0 z-50
+                w-64 bg-white dark:bg-neutral-800 
+                border-r border-neutral-200 dark:border-neutral-700 
+                flex flex-col
+                transform transition-transform duration-300 ease-in-out
+                ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+            `}>
+                {/* Logo + Close Button */}
+                <div className="p-4 border-b border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
                     <h1 className="text-xl font-bold text-primary-500">Stashly</h1>
+                    <button
+                        onClick={() => setIsSidebarOpen(false)}
+                        className="md:hidden p-1 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
                 </div>
 
                 {/* Search Trigger - Opens SearchModal (Ctrl+K) */}
                 <div className="p-3">
                     <button
-                        onClick={() => setIsSearchOpen(true)}
+                        onClick={() => { setIsSearchOpen(true); setIsSidebarOpen(false); }}
                         className="w-full flex items-center gap-2 px-3 py-2 text-sm text-neutral-500 bg-neutral-100 dark:bg-neutral-700 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-600 transition-colors"
                     >
                         <Search className="w-4 h-4" />
                         <span className="flex-1 text-left">Search...</span>
-                        <kbd className="px-1.5 py-0.5 text-xs bg-neutral-200 dark:bg-neutral-600 rounded">⌘K</kbd>
+                        <kbd className="px-1.5 py-0.5 text-xs bg-neutral-200 dark:bg-neutral-600 rounded hidden sm:inline">⌘K</kbd>
                     </button>
                 </div>
 
                 {/* Folder Navigation */}
                 <FolderSidebar
                     selectedFolderId={selectedFolderId}
-                    onFolderSelect={handleFolderSelect}
-                    onViewChange={handleViewChange}
+                    onFolderSelect={(id) => { handleFolderSelect(id); setIsSidebarOpen(false); }}
+                    onViewChange={(view) => { handleViewChange(view); setIsSidebarOpen(false); }}
                     currentView={currentView}
                 />
 
                 {/* User Menu */}
                 <div className="p-3 border-t border-neutral-200 dark:border-neutral-700">
                     <button
-                        onClick={() => setIsSettingsOpen(true)}
+                        onClick={() => { setIsSettingsOpen(true); setIsSidebarOpen(false); }}
                         className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 cursor-pointer transition-colors"
                     >
                         <div className="avatar text-sm">
@@ -300,17 +337,25 @@ export default function Dashboard() {
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 flex flex-col">
+            <main className="flex-1 flex flex-col min-w-0">
                 {/* Header */}
-                <header className="h-14 bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 flex items-center justify-between px-6">
-                    <div className="flex items-center gap-4">
+                <header className="h-14 bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 flex items-center justify-between px-4 md:px-6">
+                    <div className="flex items-center gap-3">
+                        {/* Hamburger Menu - Mobile Only */}
+                        <button
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="md:hidden p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg"
+                        >
+                            <Menu className="w-5 h-5" />
+                        </button>
+
                         <h2 className="text-lg font-semibold">{getPageTitle()}</h2>
 
-                        {/* Type Filter */}
+                        {/* Type Filter - Hidden on small mobile */}
                         <select
                             value={filterType || ''}
                             onChange={(e) => setFilterType(e.target.value || null)}
-                            className="text-sm bg-neutral-100 dark:bg-neutral-700 rounded-lg border-0 py-1.5 px-3 focus:ring-2 focus:ring-primary-500"
+                            className="hidden sm:block text-sm bg-neutral-100 dark:bg-neutral-700 rounded-lg border-0 py-1.5 px-3 focus:ring-2 focus:ring-primary-500"
                         >
                             <option value="">All Types</option>
                             {RESOURCE_TYPES.map(({ type, label }) => (
@@ -319,7 +364,7 @@ export default function Dashboard() {
                         </select>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 md:gap-2">
                         {/* Dark mode toggle */}
                         <button
                             onClick={toggleDarkMode}
@@ -335,26 +380,26 @@ export default function Dashboard() {
 
                         <button
                             onClick={fetchResources}
-                            className="btn-ghost p-2"
+                            className="btn-ghost p-2 hidden sm:flex"
                             title="Refresh"
                         >
                             <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
                         </button>
                         <button
                             onClick={() => setIsSettingsOpen(true)}
-                            className="btn-ghost p-2"
+                            className="btn-ghost p-2 hidden md:flex"
                             title="Settings"
                         >
                             <Settings className="w-5 h-5" />
                         </button>
-                        <button onClick={logout} className="btn-ghost p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
+                        <button onClick={logout} className="btn-ghost p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 hidden sm:flex">
                             <LogOut className="w-5 h-5" />
                         </button>
                     </div>
                 </header>
 
-                {/* Content */}
-                <div className="flex-1 p-6 overflow-y-auto">
+                {/* Content - Extra padding at bottom for mobile nav */}
+                <div className="flex-1 p-4 md:p-6 overflow-y-auto pb-24 md:pb-6">
                     {/* Welcome Section - only on home */}
                     {currentView === 'home' && (
                         <div className="mb-8">
@@ -364,7 +409,7 @@ export default function Dashboard() {
                             <p className="text-neutral-600 dark:text-neutral-400">
                                 Your personal resource hub is ready. Start organizing your digital resources.
                                 <span className="text-sm ml-2 text-neutral-400">
-                                    (Tip: Press <kbd className="px-1.5 py-0.5 bg-neutral-200 dark:bg-neutral-700 rounded text-xs">Ctrl+N</kbd> to add a resource)
+                                    (Tip: Press <kbd className="px-1.5 py-0.5 bg-neutral-200 dark:bg-neutral-700 rounded text-xs">Alt+N</kbd> to add a resource)
                                 </span>
                             </p>
                         </div>
@@ -481,6 +526,46 @@ export default function Dashboard() {
                 onClose={() => setIsSearchOpen(false)}
                 onSelectResource={(resource) => setSelectedResource(resource)}
             />
+
+            {/* Mobile Bottom Navigation */}
+            <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-neutral-800 border-t border-neutral-200 dark:border-neutral-700 md:hidden z-30">
+                <div className="flex items-center justify-around h-16">
+                    <button
+                        onClick={() => handleViewChange('home')}
+                        className={`flex flex-col items-center gap-1 p-2 ${currentView === 'home' ? 'text-primary-500' : 'text-neutral-500'}`}
+                    >
+                        <Home className="w-5 h-5" />
+                        <span className="text-xs">Home</span>
+                    </button>
+                    <button
+                        onClick={() => setIsSearchOpen(true)}
+                        className="flex flex-col items-center gap-1 p-2 text-neutral-500"
+                    >
+                        <Search className="w-5 h-5" />
+                        <span className="text-xs">Search</span>
+                    </button>
+                    <button
+                        onClick={() => { setEditResource(null); setIsModalOpen(true); }}
+                        className="flex items-center justify-center w-12 h-12 -mt-4 bg-primary-500 text-white rounded-full shadow-lg"
+                    >
+                        <Plus className="w-6 h-6" />
+                    </button>
+                    <button
+                        onClick={() => handleViewChange('favorites')}
+                        className={`flex flex-col items-center gap-1 p-2 ${currentView === 'favorites' ? 'text-primary-500' : 'text-neutral-500'}`}
+                    >
+                        <Heart className="w-5 h-5" />
+                        <span className="text-xs">Favorites</span>
+                    </button>
+                    <button
+                        onClick={() => setIsSettingsOpen(true)}
+                        className="flex flex-col items-center gap-1 p-2 text-neutral-500"
+                    >
+                        <Settings className="w-5 h-5" />
+                        <span className="text-xs">Settings</span>
+                    </button>
+                </div>
+            </nav>
         </div>
     );
 }

@@ -78,6 +78,16 @@ export default function ResourceModal({
         }
     }, [isOpen]);
 
+    // Lock body scroll when modal is open
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isOpen]);
+
     // Reset form when modal opens or populate with edit data
     useEffect(() => {
         if (isOpen) {
@@ -275,7 +285,7 @@ export default function ResourceModal({
             />
 
             {/* Modal */}
-            <div className="relative w-full max-w-2xl max-h-[90vh] overflow-hidden bg-white dark:bg-neutral-800 rounded-xl shadow-2xl mx-4 animate-scaleIn">
+            <div className="relative w-full max-w-2xl max-h-[90vh] md:max-h-[90vh] h-full md:h-auto overflow-hidden bg-white dark:bg-neutral-800 md:rounded-xl shadow-2xl md:mx-4 animate-scaleIn">
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-700">
                     <h2 className="text-lg font-semibold">
