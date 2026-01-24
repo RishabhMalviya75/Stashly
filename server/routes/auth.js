@@ -288,11 +288,8 @@ router.get('/me', isAuthenticated, async (req, res) => {
 
 /**
  * @route   POST /api/auth/forgot-password
- * @desc    Request password reset email
+ * @desc    Request password reset - sends 6-digit code via email
  * @access  Public
- * 
- * 📚 NOTE: In a production app, you would send an email here.
- * For the MVP, we'll generate a token that could be used in an email.
  */
 router.post('/forgot-password',
     body('email').isEmail().withMessage('Please enter a valid email'),
@@ -300,6 +297,7 @@ router.post('/forgot-password',
     async (req, res) => {
         try {
             const { email } = req.body;
+            const { sendPasswordResetCode } = require('../utils/email');
 
             const user = await User.findByEmail(email);
 
@@ -307,35 +305,47 @@ router.post('/forgot-password',
             if (!user) {
                 return res.json({
                     success: true,
-                    message: 'If an account exists with this email, you will receive reset instructions.'
+                    message: 'If an account exists with this email, you will receive a verification code.'
                 });
             }
 
-            // Generate reset token
-            const resetToken = crypto.randomBytes(32).toString('hex');
+            // Generate 6-digit code
+            const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-            // Hash the token before storing (security)
-            const hashedToken = crypto
+            // Hash the code before storing (security)
+            const hashedCode = crypto
                 .createHash('sha256')
-                .update(resetToken)
+                .update(resetCode)
                 .digest('hex');
 
-            // Save to user
-            user.resetPasswordToken = hashedToken;
-            user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+            // Save to user (10 minute expiry)
+            user.resetPasswordCode = hashedCode;
+            user.resetPasswordCodeExpires = Date.now() + 600000; // 10 minutes
             await user.save();
 
-            // In production: Send email with reset link containing resetToken
-            // For MVP: We'll just return success
-            // The reset link would be: ${CLIENT_URL}/reset-password?token=${resetToken}
-
-            console.log(`Password reset token for ${email}: ${resetToken}`);
+            // Send email with verification code
+            try {
+                await sendPasswordResetCode(email, resetCode, user.displayName);
+                console.log(`Password reset code sent to ${email}`);
+            } catch (emailError) {
+                console.error('Failed to send email:', emailError);
+                // In development, still return the code for testing
+                if (process.env.NODE_ENV === 'development') {
+                    return res.json({
+                        success: true,
+                        message: 'Email service unavailable. Check console for code.',
+                        devCode: resetCode
+                    });
+                }
+                return res.status(500).json({
+                    success: false,
+                    message: 'Failed to send verification email. Please try again.'
+                });
+            }
 
             res.json({
                 success: true,
-                message: 'If an account exists with this email, you will receive reset instructions.',
-                // Only in development - remove in production!
-                ...(process.env.NODE_ENV === 'development' && { devToken: resetToken })
+                message: 'If an account exists with this email, you will receive a verification code.'
             });
 
         } catch (error) {
@@ -349,49 +359,115 @@ router.post('/forgot-password',
 );
 
 // ====================
-// RESET PASSWORD
+// VERIFY RESET CODE
 // ====================
 
 /**
- * @route   POST /api/auth/reset-password
- * @desc    Reset password using token
+ * @route   POST /api/auth/verify-reset-code
+ * @desc    Verify the 6-digit reset code
  * @access  Public
  */
-router.post('/reset-password',
+router.post('/verify-reset-code',
     [
-        body('token').notEmpty().withMessage('Reset token is required'),
-        body('password')
-            .isLength({ min: 8 })
-            .withMessage('Password must be at least 8 characters')
+        body('email').isEmail().withMessage('Please enter a valid email'),
+        body('code')
+            .isLength({ min: 6, max: 6 })
+            .withMessage('Code must be 6 digits')
+            .isNumeric()
+            .withMessage('Code must contain only numbers')
     ],
     handleValidationErrors,
     async (req, res) => {
         try {
-            const { token, password } = req.body;
+            const { email, code } = req.body;
 
-            // Hash the provided token to match stored hash
-            const hashedToken = crypto
+            // Hash the provided code to match stored hash
+            const hashedCode = crypto
                 .createHash('sha256')
-                .update(token)
+                .update(code)
                 .digest('hex');
 
-            // Find user with valid token
+            // Find user with valid code
             const user = await User.findOne({
-                resetPasswordToken: hashedToken,
-                resetPasswordExpires: { $gt: Date.now() }
+                email: email.toLowerCase(),
+                resetPasswordCode: hashedCode,
+                resetPasswordCodeExpires: { $gt: Date.now() }
             });
 
             if (!user) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Invalid or expired reset token'
+                    message: 'Invalid or expired verification code'
+                });
+            }
+
+            res.json({
+                success: true,
+                message: 'Code verified successfully'
+            });
+
+        } catch (error) {
+            console.error('Verify code error:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to verify code'
+            });
+        }
+    }
+);
+
+// ====================
+// RESET PASSWORD
+// ====================
+
+/**
+ * @route   POST /api/auth/reset-password
+ * @desc    Reset password using email and verification code
+ * @access  Public
+ */
+router.post('/reset-password',
+    [
+        body('email').isEmail().withMessage('Please enter a valid email'),
+        body('code')
+            .isLength({ min: 6, max: 6 })
+            .withMessage('Code must be 6 digits'),
+        body('password')
+            .isLength({ min: 8 })
+            .withMessage('Password must be at least 8 characters')
+            .matches(/\d/)
+            .withMessage('Password must contain a number')
+            .matches(/[a-zA-Z]/)
+            .withMessage('Password must contain a letter')
+    ],
+    handleValidationErrors,
+    async (req, res) => {
+        try {
+            const { email, code, password } = req.body;
+
+            // Hash the provided code to match stored hash
+            const hashedCode = crypto
+                .createHash('sha256')
+                .update(code)
+                .digest('hex');
+
+            // Find user with valid code
+            const user = await User.findOne({
+                email: email.toLowerCase(),
+                resetPasswordCode: hashedCode,
+                resetPasswordCodeExpires: { $gt: Date.now() }
+            });
+
+            if (!user) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid or expired verification code'
                 });
             }
 
             // Update password
             user.passwordHash = password; // Pre-save hook will hash it
-            user.resetPasswordToken = undefined;
-            user.resetPasswordExpires = undefined;
+            user.resetPasswordCode = undefined;
+            user.resetPasswordCodeExpires = undefined;
             await user.save();
 
             res.json({

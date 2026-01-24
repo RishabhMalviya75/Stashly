@@ -68,9 +68,12 @@ export const authAPI = {
     // Request password reset
     forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
 
-    // Reset password with token
-    resetPassword: (token, password) =>
-        api.post('/auth/reset-password', { token, password }),
+    // Verify 6-digit reset code
+    verifyResetCode: (email, code) => api.post('/auth/verify-reset-code', { email, code }),
+
+    // Reset password with email, code, and new password
+    resetPassword: (email, code, password) =>
+        api.post('/auth/reset-password', { email, code, password }),
 };
 
 // =====================

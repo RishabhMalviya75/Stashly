@@ -129,14 +129,16 @@ export function AuthProvider({ children }) {
     }, [navigate]);
 
     /**
-     * Request password reset
+     * Request password reset - sends 6-digit code to email
      */
     const forgotPassword = useCallback(async (email) => {
         setAuthLoading(true);
         try {
             const response = await authAPI.forgotPassword(email);
-            toast.success('Check your email for reset instructions');
-            return { success: true, devToken: response.data.devToken };
+            if (response.data.success) {
+                toast.success('Verification code sent to your email');
+                return { success: true, devCode: response.data.devCode };
+            }
         } catch (error) {
             const message = error.response?.data?.message || 'Request failed';
             toast.error(message);
@@ -147,12 +149,31 @@ export function AuthProvider({ children }) {
     }, []);
 
     /**
-     * Reset password with token
+     * Verify 6-digit reset code
      */
-    const resetPassword = useCallback(async (token, password) => {
+    const verifyResetCode = useCallback(async (email, code) => {
         setAuthLoading(true);
         try {
-            await authAPI.resetPassword(token, password);
+            const response = await authAPI.verifyResetCode(email, code);
+            if (response.data.success) {
+                return { success: true };
+            }
+        } catch (error) {
+            const message = error.response?.data?.message || 'Invalid code';
+            toast.error(message);
+            return { success: false, error: message };
+        } finally {
+            setAuthLoading(false);
+        }
+    }, []);
+
+    /**
+     * Reset password with email, code, and new password
+     */
+    const resetPassword = useCallback(async (email, code, password) => {
+        setAuthLoading(true);
+        try {
+            await authAPI.resetPassword(email, code, password);
             toast.success('Password reset successfully! Please login.');
             navigate('/login');
             return { success: true };
@@ -175,6 +196,7 @@ export function AuthProvider({ children }) {
         login,
         logout,
         forgotPassword,
+        verifyResetCode,
         resetPassword,
     };
 

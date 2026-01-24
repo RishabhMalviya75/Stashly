@@ -94,9 +94,9 @@ const userSchema = new mongoose.Schema({
         default: 104857600 // 100MB in bytes
     },
 
-    // Password reset fields
-    resetPasswordToken: String,
-    resetPasswordExpires: Date,
+    // Password reset fields (6-digit verification code)
+    resetPasswordCode: String,
+    resetPasswordCodeExpires: Date,
 
     // Timestamps
     lastLoginAt: {

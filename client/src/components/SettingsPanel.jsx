@@ -137,8 +137,8 @@ export default function SettingsPanel({ isOpen, onClose }) {
                                     key={value}
                                     onClick={() => setTheme(value)}
                                     className={`flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all ${theme === value
-                                            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                                            : 'border-neutral-200 dark:border-neutral-600 hover:border-neutral-300 dark:hover:border-neutral-500'
+                                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                                        : 'border-neutral-200 dark:border-neutral-600 hover:border-neutral-300 dark:hover:border-neutral-500'
                                         }`}
                                 >
                                     <Icon className={`w-5 h-5 ${theme === value ? 'text-primary-500' : 'text-neutral-500'
@@ -153,27 +153,6 @@ export default function SettingsPanel({ isOpen, onClose }) {
                     </div>
 
                     {/* Account Section */}
-                    <div>
-                        <div className="flex items-center gap-2 mb-3">
-                            <User className="w-5 h-5 text-neutral-500" />
-                            <h3 className="font-medium">Account</h3>
-                        </div>
-                        <div className="space-y-2">
-                            <div className="p-3 bg-neutral-50 dark:bg-neutral-700/50 rounded-lg">
-                                <p className="text-sm text-neutral-500 mb-1">Member since</p>
-                                <p className="font-medium">
-                                    {user?.createdAt
-                                        ? new Date(user.createdAt).toLocaleDateString('en-US', {
-                                            month: 'long',
-                                            year: 'numeric'
-                                        })
-                                        : 'Unknown'
-                                    }
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
                     {/* Logout */}
                     <div className="pt-4 border-t border-neutral-200 dark:border-neutral-700">
                         <button
