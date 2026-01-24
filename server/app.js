@@ -111,7 +111,7 @@ app.use(session({
         secure: process.env.NODE_ENV === 'production', // HTTPS only in production
         httpOnly: true,           // Prevents JavaScript access (XSS protection)
         maxAge: 24 * 60 * 60 * 1000, // 24 hours in milliseconds
-        sameSite: 'lax'           // CSRF protection
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' // 'none' for cross-origin in prod
     }
 }));
 

@@ -17,43 +17,34 @@ const connectDB = require('./config/db');
 
 const PORT = process.env.PORT || 5000;
 
-// Start the server
-const startServer = async () => {
-    try {
-        // Connect to MongoDB first
-        await connectDB();
+// Connect to database
+connectDB();
 
-        // Start Express server
-        app.listen(PORT, () => {
-            console.log('');
-            console.log('🚀 ================================');
-            console.log('   STASHLY SERVER IS RUNNING!');
-            console.log('================================');
-            console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-            console.log(`🌐 Server URL: http://localhost:${PORT}`);
-            console.log(`💚 Health Check: http://localhost:${PORT}/api/health`);
-            console.log('================================');
-            console.log('');
-        });
+// For Vercel serverless deployment - export the app
+module.exports = app;
 
-    } catch (error) {
-        console.error('❌ Failed to start server:', error);
-        process.exit(1);
-    }
-};
+// Only start the server locally (not in Vercel)
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+    app.listen(PORT, () => {
+        console.log('');
+        console.log('🚀 ================================');
+        console.log('   STASHLY SERVER IS RUNNING!');
+        console.log('================================');
+        console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+        console.log(`🌐 Server URL: http://localhost:${PORT}`);
+        console.log(`💚 Health Check: http://localhost:${PORT}/api/health`);
+        console.log('================================');
+        console.log('');
+    });
+}
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
     console.error('❌ Unhandled Promise Rejection:', err);
-    // Close server & exit process
-    process.exit(1);
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
     console.error('❌ Uncaught Exception:', err);
-    process.exit(1);
 });
 
-// Start the server
-startServer();
