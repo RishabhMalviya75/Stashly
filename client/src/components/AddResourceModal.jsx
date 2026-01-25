@@ -285,9 +285,9 @@ export default function ResourceModal({
             />
 
             {/* Modal */}
-            <div className="relative w-full max-w-2xl max-h-[90vh] md:max-h-[90vh] h-full md:h-auto overflow-hidden bg-white dark:bg-neutral-800 md:rounded-xl shadow-2xl md:mx-4 animate-scaleIn">
+            <div className="relative w-full max-w-2xl h-full md:h-auto md:max-h-[90vh] flex flex-col bg-white dark:bg-neutral-800 md:rounded-xl shadow-2xl md:mx-4 animate-scaleIn overflow-hidden">
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-700">
+                <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-700 shrink-0">
                     <h2 className="text-lg font-semibold">
                         {isEditMode ? 'Edit Resource' : 'Add New Resource'}
                     </h2>
@@ -300,7 +300,7 @@ export default function ResourceModal({
                 </div>
 
                 {/* Type Selector - disabled in edit mode */}
-                <div className="p-4 border-b border-neutral-200 dark:border-neutral-700">
+                <div className="p-4 border-b border-neutral-200 dark:border-neutral-700 shrink-0 overflow-x-auto">
                     <div className="flex flex-wrap gap-2">
                         {RESOURCE_TYPES.map(({ type, label, icon: Icon, color }) => (
                             <button
@@ -314,15 +314,15 @@ export default function ResourceModal({
                                     } ${isEditMode && selectedType !== type ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
                                 <Icon className={`w-4 h-4 ${color}`} />
-                                <span className="text-sm font-medium">{label}</span>
+                                <span className="text-sm font-medium whitespace-nowrap">{label}</span>
                             </button>
                         ))}
                     </div>
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit(onSubmit)} className="p-4 overflow-y-auto max-h-[calc(90vh-200px)]">
-                    <div className="space-y-4">
+                <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto min-h-0">
+                    <div className="p-4 space-y-4">
                         {/* Title - All types */}
                         <div>
                             <label className="block text-sm font-medium mb-1">
@@ -582,8 +582,8 @@ export default function ResourceModal({
                         </div>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+                    {/* Actions - Sticky Footer */}
+                    <div className="flex justify-end gap-3 p-4 border-t border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 sticky bottom-0 z-10">
                         <button
                             type="button"
                             onClick={onClose}

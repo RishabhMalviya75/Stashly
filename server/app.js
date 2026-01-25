@@ -49,6 +49,7 @@ app.use(helmet({
 // CORS Configuration
 const allowedOrigins = [
     'http://localhost:3000',
+    'http://127.0.0.1:3000',  // PWA may use this instead of localhost
     'https://stashly-k535.vercel.app',
     process.env.CLIENT_URL
 ].filter(Boolean);
