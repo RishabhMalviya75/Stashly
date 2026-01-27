@@ -4,8 +4,55 @@
  * Modal to display full details of a resource when clicked.
  */
 
-import { X, ExternalLink, Copy, Edit, Trash2, Star, Calendar, Folder, Tag } from 'lucide-react';
+import { X, ExternalLink, Copy, Edit, Trash2, Star, Calendar, Folder, Tag, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
+
+/**
+ * Check if a file is an office document
+ */
+const isOfficeDocument = (fileName) => {
+    if (!fileName) return false;
+    const officeExtensions = ['.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'];
+    return officeExtensions.some(ext => fileName.toLowerCase().endsWith(ext));
+};
+
+/**
+ * Check if a file is a PDF
+ */
+const isPDF = (fileName) => {
+    if (!fileName) return false;
+    return fileName.toLowerCase().endsWith('.pdf');
+};
+
+/**
+ * Check if a file is an image
+ */
+const isImage = (fileName) => {
+    if (!fileName) return false;
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
+    return imageExtensions.some(ext => fileName.toLowerCase().endsWith(ext));
+};
+
+/**
+ * Get the viewer URL:
+ * - Images use direct URL (displayed with img tag)
+ * - PDFs and Office docs use Google Docs gview
+ */
+const getViewerUrl = (fileUrl, fileName) => {
+    if (!fileUrl) return fileUrl;
+
+    // Images can be displayed directly by the browser
+    if (isImage(fileName)) {
+        return fileUrl;
+    }
+
+    // PDFs and Office documents use Google Docs gview
+    if (isPDF(fileName) || isOfficeDocument(fileName)) {
+        return `https://docs.google.com/gview?url=${encodeURIComponent(fileUrl)}&embedded=true`;
+    }
+
+    return fileUrl;
+};
 
 export default function ResourceDetailView({
     resource,
@@ -122,40 +169,89 @@ export default function ResourceDetailView({
                         </div>
                     )}
 
-                    {/* File URL for documents */}
+                    {/* Document Preview */}
                     {resource.type === 'document' && resource.fileUrl && (
-                        <div>
-                            <label className="block text-sm font-medium text-neutral-500 mb-1">
-                                Document Link {resource.fileName && `(${resource.fileName})`}
-                            </label>
-                            <div className="flex items-center gap-2">
-                                <a
-                                    href={resource.fileUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        window.open(resource.fileUrl, '_blank', 'noopener,noreferrer');
-                                    }}
-                                    className="flex-1 text-primary-600 hover:text-primary-700 hover:underline truncate cursor-pointer"
-                                >
-                                    {resource.fileUrl}
-                                </a>
-                                <button
-                                    onClick={() => handleCopy(resource.fileUrl, 'File URL')}
-                                    className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg"
-                                    title="Copy file URL"
-                                >
-                                    <Copy className="w-4 h-4" />
-                                </button>
-                                <button
-                                    onClick={() => window.open(resource.fileUrl, '_blank', 'noopener,noreferrer')}
-                                    className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg"
-                                    title="Open document"
-                                >
-                                    <ExternalLink className="w-4 h-4" />
-                                </button>
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                                <label className="block text-sm font-medium text-neutral-500">
+                                    Document {resource.fileName && `(${resource.fileName})`}
+                                </label>
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        onClick={() => handleCopy(resource.fileUrl, 'File URL')}
+                                        className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg"
+                                        title="Copy file URL"
+                                    >
+                                        <Copy className="w-4 h-4" />
+                                    </button>
+                                    <a
+                                        href={resource.fileUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg"
+                                        title="Open in new tab"
+                                    >
+                                        <ExternalLink className="w-4 h-4" />
+                                    </a>
+                                </div>
                             </div>
+
+                            {/* Different preview based on file type */}
+                            {isImage(resource.fileName) ? (
+                                /* Image Preview */
+                                <div className="w-full h-80 bg-neutral-100 dark:bg-neutral-900 rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700">
+                                    <img
+                                        src={resource.fileUrl}
+                                        alt={resource.fileName || 'Image preview'}
+                                        className="w-full h-full object-contain"
+                                    />
+                                </div>
+                            ) : isPDF(resource.fileName) ? (
+                                /* PDF - Use Google Docs Viewer for inline preview */
+                                <div className="w-full h-80 bg-neutral-100 dark:bg-neutral-900 rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700">
+                                    <iframe
+                                        src={getViewerUrl(resource.fileUrl, resource.fileName)}
+                                        className="w-full h-full"
+                                        frameBorder="0"
+                                        title={resource.fileName || 'PDF Preview'}
+                                        loading="lazy"
+                                    />
+                                </div>
+                            ) : isOfficeDocument(resource.fileName) ? (
+                                /* Office Documents - Use Google Docs Viewer */
+                                <div className="w-full h-80 bg-neutral-100 dark:bg-neutral-900 rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700">
+                                    <iframe
+                                        src={getViewerUrl(resource.fileUrl, resource.fileName)}
+                                        className="w-full h-full"
+                                        frameBorder="0"
+                                        title={resource.fileName || 'Document Preview'}
+                                        loading="lazy"
+                                    />
+                                </div>
+                            ) : (
+                                /* Other files - Download link */
+                                <div className="w-full p-8 bg-neutral-100 dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-700 text-center">
+                                    <div className="text-6xl mb-4">📁</div>
+                                    <p className="text-neutral-600 dark:text-neutral-400 mb-4">
+                                        {resource.fileName || 'File'}
+                                    </p>
+                                    <a
+                                        href={resource.fileUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
+                                    >
+                                        <Download className="w-5 h-5" />
+                                        Download File
+                                    </a>
+                                </div>
+                            )}
+
+                            {(isPDF(resource.fileName) || isOfficeDocument(resource.fileName)) && (
+                                <p className="text-xs text-neutral-500">
+                                    If preview doesn't load, <a href={resource.fileUrl} target="_blank" rel="noopener noreferrer" className="text-primary-500 hover:underline">click here to download</a>
+                                </p>
+                            )}
                         </div>
                     )}
 
