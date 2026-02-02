@@ -43,6 +43,8 @@ const uploadToCloudinary = async (fileBuffer, originalName, userId) => {
             {
                 public_id: publicId,
                 resource_type: 'auto', // Automatically detect file type
+                type: 'upload', // Public upload type (not authenticated)
+                access_mode: 'public', // Ensure files are publicly accessible
                 folder: '', // We include folder in public_id
                 overwrite: false,
                 unique_filename: false,
@@ -130,8 +132,88 @@ const getFileDetails = async (publicId, resourceType = 'image') => {
     }
 };
 
+/**
+ * Generate a signed URL for accessing a Cloudinary file
+ * Signed URLs include authentication and can access restricted files
+ * 
+ * @param {string} publicId - The Cloudinary public ID
+ * @param {string} resourceType - The resource type (image, video, raw)
+ * @param {number} expiresIn - URL expiration time in seconds (default: 1 hour)
+ * @returns {string} Signed URL
+ */
+const generateSignedUrl = (publicId, resourceType = 'image', expiresIn = 3600) => {
+    try {
+        // Generate a signed URL with expiration
+        const signedUrl = cloudinary.url(publicId, {
+            resource_type: resourceType,
+            type: 'authenticated', // For authenticated uploads
+            sign_url: true,
+            secure: true,
+            expires_at: Math.floor(Date.now() / 1000) + expiresIn
+        });
+
+        return signedUrl;
+    } catch (error) {
+        console.error('Cloudinary signed URL error:', error);
+        throw error;
+    }
+};
+
+/**
+ * Extract public ID and resource type from a Cloudinary URL
+ * 
+ * @param {string} fileUrl - The Cloudinary file URL
+ * @returns {Object} { publicId, resourceType }
+ */
+const parseCloudinaryUrl = (fileUrl) => {
+    if (!fileUrl || !fileUrl.includes('cloudinary.com')) {
+        return null;
+    }
+
+    try {
+        // Cloudinary URL format: https://res.cloudinary.com/cloud_name/resource_type/type/version/public_id.extension
+        // Example: https://res.cloudinary.com/demo/image/upload/v1234567890/folder/filename.pdf
+
+        const url = new URL(fileUrl);
+        const pathParts = url.pathname.split('/').filter(Boolean);
+
+        // pathParts: [cloud_name, resource_type, type, version?, ...public_id_parts]
+        if (pathParts.length < 4) return null;
+
+        const resourceType = pathParts[1]; // 'image', 'video', 'raw'
+        const uploadType = pathParts[2]; // 'upload', 'authenticated', etc.
+
+        // Find where public_id starts (after version if present)
+        let publicIdStartIndex = 3;
+        if (pathParts[3] && pathParts[3].startsWith('v') && /^v\d+$/.test(pathParts[3])) {
+            publicIdStartIndex = 4;
+        }
+
+        // Join remaining parts as public_id (remove extension from last part)
+        const publicIdParts = pathParts.slice(publicIdStartIndex);
+        let publicId = publicIdParts.join('/');
+
+        // Remove file extension for proper public_id
+        // But keep it for raw files as they need the extension
+        if (resourceType !== 'raw') {
+            publicId = publicId.replace(/\.[^/.]+$/, '');
+        }
+
+        return {
+            publicId,
+            resourceType,
+            uploadType
+        };
+    } catch (error) {
+        console.error('Error parsing Cloudinary URL:', error);
+        return null;
+    }
+};
+
 module.exports = {
     uploadToCloudinary,
     deleteFromCloudinary,
-    getFileDetails
+    getFileDetails,
+    generateSignedUrl,
+    parseCloudinaryUrl
 };

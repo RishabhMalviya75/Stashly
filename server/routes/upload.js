@@ -19,7 +19,7 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { uploadToCloudinary, deleteFromCloudinary } = require('../utils/uploadUtils');
+const { uploadToCloudinary, deleteFromCloudinary, generateSignedUrl, parseCloudinaryUrl } = require('../utils/uploadUtils');
 const { isAuthenticated } = require('../middleware/auth');
 
 // Configure multer for memory storage
@@ -173,4 +173,145 @@ router.use((error, req, res, next) => {
     next(error);
 });
 
+/**
+ * GET /api/upload/signed-url
+ * Generate a signed URL for accessing a Cloudinary file
+ * This creates an authenticated URL that can access restricted files
+ * 
+ * Query params: url (the original Cloudinary file URL)
+ */
+router.get('/signed-url', isAuthenticated, async (req, res) => {
+    try {
+        const { url } = req.query;
+
+        if (!url) {
+            return res.status(400).json({
+                success: false,
+                message: 'URL parameter is required'
+            });
+        }
+
+        // Security: Only allow Cloudinary URLs
+        if (!url.includes('cloudinary.com')) {
+            return res.status(403).json({
+                success: false,
+                message: 'Only Cloudinary URLs are allowed'
+            });
+        }
+
+        // Parse the Cloudinary URL to extract public ID and resource type
+        const parsed = parseCloudinaryUrl(url);
+
+        if (!parsed) {
+            // If we can't parse, try returning the original URL
+            // It might already be public
+            return res.json({
+                success: true,
+                data: { signedUrl: url }
+            });
+        }
+
+        // Generate a signed URL (valid for 1 hour)
+        const signedUrl = generateSignedUrl(parsed.publicId, parsed.resourceType, 3600);
+
+        res.json({
+            success: true,
+            data: { signedUrl }
+        });
+
+    } catch (error) {
+        console.error('Signed URL error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to generate signed URL'
+        });
+    }
+});
+
+/**
+ * GET /api/upload/proxy
+ * Proxy endpoint to fetch files from Cloudinary
+ * Uses signed URLs to access authenticated files
+ * 
+ * Query params: url (the Cloudinary file URL)
+ */
+router.get('/proxy', isAuthenticated, async (req, res) => {
+    try {
+        const { url } = req.query;
+
+        if (!url) {
+            return res.status(400).json({
+                success: false,
+                message: 'URL parameter is required'
+            });
+        }
+
+        // Security: Only allow Cloudinary URLs
+        if (!url.includes('cloudinary.com') && !url.includes('res.cloudinary.com')) {
+            return res.status(403).json({
+                success: false,
+                message: 'Only Cloudinary URLs are allowed'
+            });
+        }
+
+        // Parse the URL and generate a signed URL for authenticated access
+        const parsed = parseCloudinaryUrl(url);
+        let fetchUrl = url;
+
+        if (parsed) {
+            // Try to generate a signed URL
+            try {
+                fetchUrl = generateSignedUrl(parsed.publicId, parsed.resourceType, 3600);
+            } catch (signError) {
+                console.warn('Could not generate signed URL, using original:', signError.message);
+            }
+        }
+
+        // Fetch the file from Cloudinary using the signed URL
+        const response = await fetch(fetchUrl);
+
+        if (!response.ok) {
+            // If signed URL fails, try original URL as fallback
+            if (fetchUrl !== url) {
+                console.log('Signed URL failed, trying original URL...');
+                const fallbackResponse = await fetch(url);
+                if (fallbackResponse.ok) {
+                    const contentType = fallbackResponse.headers.get('content-type') || 'application/octet-stream';
+                    res.setHeader('Content-Type', contentType);
+                    res.setHeader('Content-Disposition', 'inline');
+                    res.setHeader('Cache-Control', 'public, max-age=3600');
+                    const buffer = await fallbackResponse.arrayBuffer();
+                    return res.send(Buffer.from(buffer));
+                }
+            }
+
+            console.error(`Failed to fetch file: ${response.status} ${response.statusText}`);
+            return res.status(response.status).json({
+                success: false,
+                message: `Failed to fetch file: ${response.statusText}`
+            });
+        }
+
+        // Get content type from response
+        const contentType = response.headers.get('content-type') || 'application/octet-stream';
+
+        // Set headers for inline viewing (not download)
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Disposition', 'inline');
+        res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+
+        // Stream the response to client
+        const buffer = await response.arrayBuffer();
+        res.send(Buffer.from(buffer));
+
+    } catch (error) {
+        console.error('File proxy error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to proxy file'
+        });
+    }
+});
+
 module.exports = router;
+

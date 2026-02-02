@@ -117,6 +117,36 @@ Stashly/
 - [x] Week 3: UI Implementation (Sidebar, Forms)
 - [x] Week 4: Search & Polish
 
+## Upcoming Features
+
+### 🚀 Team Collaboration & Resource Sharing (Notion-style)
+
+A major upcoming feature set focused on enabling multi-user collaboration and shared resource management:
+
+#### Shared Workspaces
+- **Team Environments**: Create workspaces where multiple users can collaborate
+- **Shared Resource Libraries**: Resources uploaded by one team member are accessible to all members
+- **Workspace Invitations**: Invite users to join your workspace via email or link
+
+#### Permissions & Access Control
+- **Role-based Access**: Admin, Editor, Viewer roles for team members
+- **Resource-level Permissions**: Control who can view, edit, or delete specific resources
+- **Private vs Shared**: Toggle resources between personal and team-visible
+
+#### Real-time Collaboration
+- **Activity Feed**: See what team members have recently added or modified
+- **Comments & Annotations**: Discuss resources with team members
+- **Notifications**: Get notified when resources are shared with you
+
+#### Team Management
+- **Team Dashboard**: Overview of team activity and shared resources
+- **Member Management**: Add/remove team members, assign roles
+- **Usage Analytics**: Track team engagement with shared resources
+
+> 💡 **Inspiration**: This feature set is inspired by Notion's collaborative workspace model, adapted for resource/bookmark management.
+
+---
+
 ## License
 
 MIT

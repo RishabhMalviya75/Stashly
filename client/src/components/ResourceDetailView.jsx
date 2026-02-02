@@ -6,31 +6,61 @@
 
 import { X, ExternalLink, Copy, Edit, Trash2, Star, Calendar, Folder, Tag, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
+import PDFViewer from './PDFViewer';
 
 /**
  * Check if a file is an office document
+ * Checks both fileName and fileUrl in case fileName is missing
  */
-const isOfficeDocument = (fileName) => {
-    if (!fileName) return false;
+const isOfficeDocument = (fileName, fileUrl = '') => {
+    const nameToCheck = fileName || fileUrl || '';
+    if (!nameToCheck) return false;
     const officeExtensions = ['.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'];
-    return officeExtensions.some(ext => fileName.toLowerCase().endsWith(ext));
+    return officeExtensions.some(ext => nameToCheck.toLowerCase().endsWith(ext));
 };
 
 /**
  * Check if a file is a PDF
+ * Checks both fileName and fileUrl in case fileName is missing
  */
-const isPDF = (fileName) => {
-    if (!fileName) return false;
-    return fileName.toLowerCase().endsWith('.pdf');
+const isPDF = (fileName, fileUrl = '') => {
+    const nameToCheck = fileName || fileUrl || '';
+    if (!nameToCheck) return false;
+    return nameToCheck.toLowerCase().includes('.pdf');
 };
 
 /**
  * Check if a file is an image
+ * Checks both fileName and fileUrl in case fileName is missing
  */
-const isImage = (fileName) => {
-    if (!fileName) return false;
+const isImage = (fileName, fileUrl = '') => {
+    const nameToCheck = fileName || fileUrl || '';
+    if (!nameToCheck) return false;
     const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
-    return imageExtensions.some(ext => fileName.toLowerCase().endsWith(ext));
+    return imageExtensions.some(ext => nameToCheck.toLowerCase().includes(ext));
+};
+
+/**
+ * Transform Cloudinary URL to serve file inline (not as download)
+ * Adds fl_attachment:false to prevent Content-Disposition: attachment header
+ */
+const getInlineUrl = (fileUrl) => {
+    if (!fileUrl) return fileUrl;
+
+    // Check if it's a Cloudinary URL
+    if (fileUrl.includes('cloudinary.com')) {
+        // For raw files, we need to add fl_attachment:false
+        // Cloudinary URL format: https://res.cloudinary.com/cloud_name/resource_type/type/...
+        // We need to insert fl_attachment:false after the type (upload)
+
+        // Match the pattern and insert the flag
+        const uploadMatch = fileUrl.match(/(https:\/\/res\.cloudinary\.com\/[^/]+\/[^/]+\/upload)(\/.*)/);
+        if (uploadMatch) {
+            return `${uploadMatch[1]}/fl_attachment:false${uploadMatch[2]}`;
+        }
+    }
+
+    return fileUrl;
 };
 
 /**
@@ -48,7 +78,7 @@ const getViewerUrl = (fileUrl, fileName) => {
 
     // PDFs and Office documents use Google Docs gview
     if (isPDF(fileName) || isOfficeDocument(fileName)) {
-        return `https://docs.google.com/gview?url=${encodeURIComponent(fileUrl)}&embedded=true`;
+        return `https://docs.google.com/gview?url=${encodeURIComponent(getInlineUrl(fileUrl))}&embedded=true`;
     }
 
     return fileUrl;
@@ -185,7 +215,9 @@ export default function ResourceDetailView({
                                         <Copy className="w-4 h-4" />
                                     </button>
                                     <a
-                                        href={resource.fileUrl}
+                                        href={isPDF(resource.fileName, resource.fileUrl)
+                                            ? `https://docs.google.com/gview?url=${encodeURIComponent(resource.fileUrl)}`
+                                            : resource.fileUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg"
@@ -197,7 +229,7 @@ export default function ResourceDetailView({
                             </div>
 
                             {/* Different preview based on file type */}
-                            {isImage(resource.fileName) ? (
+                            {isImage(resource.fileName, resource.fileUrl) ? (
                                 /* Image Preview */
                                 <div className="w-full h-80 bg-neutral-100 dark:bg-neutral-900 rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700">
                                     <img
@@ -206,52 +238,45 @@ export default function ResourceDetailView({
                                         className="w-full h-full object-contain"
                                     />
                                 </div>
-                            ) : isPDF(resource.fileName) ? (
-                                /* PDF - Use Google Docs Viewer for inline preview */
-                                <div className="w-full h-80 bg-neutral-100 dark:bg-neutral-900 rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700">
-                                    <iframe
-                                        src={getViewerUrl(resource.fileUrl, resource.fileName)}
-                                        className="w-full h-full"
-                                        frameBorder="0"
-                                        title={resource.fileName || 'PDF Preview'}
-                                        loading="lazy"
-                                    />
-                                </div>
-                            ) : isOfficeDocument(resource.fileName) ? (
-                                /* Office Documents - Use Google Docs Viewer */
-                                <div className="w-full h-80 bg-neutral-100 dark:bg-neutral-900 rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700">
-                                    <iframe
-                                        src={getViewerUrl(resource.fileUrl, resource.fileName)}
-                                        className="w-full h-full"
-                                        frameBorder="0"
-                                        title={resource.fileName || 'Document Preview'}
-                                        loading="lazy"
-                                    />
-                                </div>
                             ) : (
-                                /* Other files - Download link */
+                                /* PDF, Office docs, and other files - Show preview card with actions */
                                 <div className="w-full p-8 bg-neutral-100 dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-700 text-center">
-                                    <div className="text-6xl mb-4">📁</div>
-                                    <p className="text-neutral-600 dark:text-neutral-400 mb-4">
-                                        {resource.fileName || 'File'}
+                                    <div className="text-6xl mb-4">
+                                        {isPDF(resource.fileName, resource.fileUrl) ? '📄' :
+                                            isOfficeDocument(resource.fileName, resource.fileUrl) ? '📝' : '📁'}
+                                    </div>
+                                    <p className="text-neutral-600 dark:text-neutral-400 mb-2 font-medium">
+                                        {resource.fileName || 'Document'}
                                     </p>
-                                    <a
-                                        href={resource.fileUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-2 px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
-                                    >
-                                        <Download className="w-5 h-5" />
-                                        Download File
-                                    </a>
+                                    {resource.fileSize && (
+                                        <p className="text-sm text-neutral-500 mb-4">
+                                            {(resource.fileSize / 1024).toFixed(1)} KB
+                                        </p>
+                                    )}
+                                    <div className="flex items-center justify-center gap-3">
+                                        <a
+                                            href={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/upload/proxy?url=${encodeURIComponent(resource.fileUrl)}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
+                                        >
+                                            <ExternalLink className="w-4 h-4" />
+                                            View Document
+                                        </a>
+                                        <a
+                                            href={resource.fileUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-2 px-5 py-2.5 border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+                                        >
+                                            <Download className="w-4 h-4" />
+                                            Download
+                                        </a>
+                                    </div>
                                 </div>
                             )}
 
-                            {(isPDF(resource.fileName) || isOfficeDocument(resource.fileName)) && (
-                                <p className="text-xs text-neutral-500">
-                                    If preview doesn't load, <a href={resource.fileUrl} target="_blank" rel="noopener noreferrer" className="text-primary-500 hover:underline">click here to download</a>
-                                </p>
-                            )}
+
                         </div>
                     )}
 
