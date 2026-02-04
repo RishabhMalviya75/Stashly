@@ -91,17 +91,17 @@ export default function Developers() {
             name: "Snehal Kushwah",
             role: "Lead Developer",
             image: "/images/snehal.jpg?v=1",
-            bio: "Architecting the future of digital organization. Snehal drives the core technical vision of Stashly, focusing on scalable systems and intuitive user experiences.",
+            bio: "Architecting the future of digital organization. I drive the core technical vision of Stashly, focusing on scalable systems and intuitive user experiences.",
             skills: ["React", "Node.js", "Express.js", "MongoDB"],
-            links: { github: "#", linkedin: "#", twitter: "#" }
+            links: { github: "https://github.com/http-snehal", linkedin: "https://www.linkedin.com/in/snehal-kushwah-492a70326/", website: "https://http-snehal.github.io/portfolio/" }
         },
         {
             name: "Rex Mantode",
             role: "Secondary Developer",
             image: "/images/rex.jpeg?v=1",
-            bio: "Crafting pixel-perfect interfaces with a passion for accessibility and performance. Alex ensures every interaction on Stashly feels smooth and responsive.",
+            bio: "I design and build pixel-perfect user interfaces using React, supported by Node.js and MongoDB, with a strong emphasis on performance, accessibility, and delivering thoughtful, high-quality user experiences.",
             skills: ["React", "Node.js", "MongoDB"],
-            links: { github: "#", linkedin: "#" }
+            links: { github: "#", linkedin: "https://www.linkedin.com/in/rex-mantode13/" }
         },
         {
             name: "Rishabh Malviya",
@@ -112,10 +112,10 @@ export default function Developers() {
             links: { github: "#", twitter: "#" }
         },
         {
-            name: "David Kim",
+            name: "Prof. Sudha Kore",
             role: "Project Mentor",
-            image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1000&auto=format&fit=crop",
-            bio: "Guiding the team with over 15 years of industry experience. David provides strategic insight on software architecture and engineering best practices.",
+            image: "--",
+            bio: "To be updated",
             skills: ["Leadership", "Strategy", "Mentorship"],
             links: { linkedin: "#", website: "#" }
         }
