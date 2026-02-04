@@ -54,6 +54,27 @@ const allowedOrigins = [
     process.env.CLIENT_URL
 ].filter(Boolean);
 
+// Automatically add www or non-www version of the custom domain
+if (process.env.CLIENT_URL) {
+    try {
+        const url = new URL(process.env.CLIENT_URL);
+        const host = url.hostname;
+        const protocol = url.protocol; // 'https:'
+
+        if (host.startsWith('www.')) {
+            // If variable is www.stashly.in, also allow stashly.in
+            const nonWwwInfo = protocol + '//' + host.replace('www.', '');
+            if (!allowedOrigins.includes(nonWwwInfo)) allowedOrigins.push(nonWwwInfo);
+        } else {
+            // If variable is stashly.in, also allow www.stashly.in
+            const wwwInfo = protocol + '//www.' + host;
+            if (!allowedOrigins.includes(wwwInfo)) allowedOrigins.push(wwwInfo);
+        }
+    } catch (e) {
+        console.error('Invalid CLIENT_URL:', process.env.CLIENT_URL);
+    }
+}
+
 app.use(cors({
     origin: function (origin, callback) {
         // Allow requests with no origin (like mobile apps or curl requests)
