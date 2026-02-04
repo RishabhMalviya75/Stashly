@@ -107,7 +107,7 @@ export default function Developers() {
             name: "Rishabh Malviya",
             role: "Secondary Developer",
             image: "/images/rishabh.jpeg?v=1",
-            bio: "Building the robust infrastructure that powers Stashly. Sarah specializes in database optimization, API security, and high-performance server logic.",
+            bio: "Building the robust infrastructure that powers Stashly. I specializes in database optimization, API security, and high-performance server logic.",
             skills: ["Express", "MongoDB", "HTML"],
             links: { github: "#", twitter: "#" }
         },
