@@ -16,6 +16,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
+import Developers from './pages/Developers';
 
 // Loading Spinner Component
 function LoadingScreen() {
@@ -93,6 +94,9 @@ function App() {
                     </PublicRoute>
                 }
             />
+
+            {/* Public routes (accessible by everyone) */}
+            <Route path="/developers" element={<Developers />} />
 
             {/* Protected routes (require authentication) */}
             <Route

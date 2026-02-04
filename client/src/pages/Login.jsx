@@ -125,6 +125,11 @@ export default function Login() {
                 <p className="text-center text-sm text-neutral-500 mt-6">
                     Stashly - Organize your digital resources
                 </p>
+                <div className="text-center mt-4">
+                    <Link to="/developers" className="text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 transition-colors">
+                        Meet the Developers
+                    </Link>
+                </div>
             </div>
         </div>
     );

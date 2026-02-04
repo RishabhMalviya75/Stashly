@@ -19,7 +19,8 @@ import {
     Loader2,
     MoreVertical,
     Edit,
-    Trash2
+    Trash2,
+    Users
 } from 'lucide-react';
 import { folderAPI } from '../services/api';
 import toast from 'react-hot-toast';
