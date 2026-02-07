@@ -146,7 +146,7 @@ const generateSignedUrl = (publicId, resourceType = 'image', expiresIn = 3600) =
         // Generate a signed URL with expiration
         const signedUrl = cloudinary.url(publicId, {
             resource_type: resourceType,
-            type: 'authenticated', // For authenticated uploads
+            type: 'upload', // Files are stored as public uploads
             sign_url: true,
             secure: true,
             expires_at: Math.floor(Date.now() / 1000) + expiresIn

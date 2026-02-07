@@ -64,6 +64,27 @@ const getInlineUrl = (fileUrl) => {
 };
 
 /**
+ * Transform Cloudinary URL to force download
+ * Adds fl_attachment flag to set Content-Disposition: attachment header
+ */
+const getDownloadUrl = (fileUrl) => {
+    if (!fileUrl) return fileUrl;
+
+    // Check if it's a Cloudinary URL
+    if (fileUrl.includes('cloudinary.com')) {
+        // For downloads, we explicitly add fl_attachment flag
+        // This ensures proper Content-Disposition header for downloads
+        // Match any resource type: image, raw, or video
+        const uploadMatch = fileUrl.match(/(https:\/\/res\.cloudinary\.com\/[^/]+\/(?:image|raw|video)\/upload)(\/.*)/);
+        if (uploadMatch) {
+            return `${uploadMatch[1]}/fl_attachment${uploadMatch[2]}`;
+        }
+    }
+
+    return fileUrl;
+};
+
+/**
  * Get the viewer URL:
  * - Images use direct URL (displayed with img tag)
  * - PDFs and Office docs use Google Docs gview
@@ -264,9 +285,8 @@ export default function ResourceDetailView({
                                             View Document
                                         </a>
                                         <a
-                                            href={resource.fileUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
+                                            href={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/upload/proxy?url=${encodeURIComponent(resource.fileUrl)}&download=true`}
+                                            download={resource.fileName || 'download'}
                                             className="inline-flex items-center gap-2 px-5 py-2.5 border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
                                         >
                                             <Download className="w-4 h-4" />

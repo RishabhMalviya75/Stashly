@@ -231,13 +231,15 @@ router.get('/signed-url', isAuthenticated, async (req, res) => {
 /**
  * GET /api/upload/proxy
  * Proxy endpoint to fetch files from Cloudinary
- * Uses signed URLs to access authenticated files
+ * Generates signed URLs for authenticated access
  * 
- * Query params: url (the Cloudinary file URL)
+ * Query params: 
+ *   - url: the Cloudinary file URL
+ *   - download: if 'true', force download headers
  */
-router.get('/proxy', isAuthenticated, async (req, res) => {
+router.get('/proxy', async (req, res) => {
     try {
-        const { url } = req.query;
+        const { url, download } = req.query;
 
         if (!url) {
             return res.status(400).json({
@@ -254,51 +256,65 @@ router.get('/proxy', isAuthenticated, async (req, res) => {
             });
         }
 
-        // Parse the URL and generate a signed URL for authenticated access
+        // Parse the Cloudinary URL and generate an authenticated URL
         const parsed = parseCloudinaryUrl(url);
         let fetchUrl = url;
 
         if (parsed) {
-            // Try to generate a signed URL
             try {
-                fetchUrl = generateSignedUrl(parsed.publicId, parsed.resourceType, 3600);
+                // Generate an authenticated URL using Cloudinary's private download API
+                const cloudinary = require('../config/cloudinary');
+
+                // Use utils.private_download_url for authenticated access
+                fetchUrl = cloudinary.utils.private_download_url(parsed.publicId, parsed.resourceType === 'raw' ? 'auto' : parsed.resourceType, {
+                    resource_type: parsed.resourceType,
+                    type: 'upload',
+                    attachment: false,
+                    expires_at: Math.floor(Date.now() / 1000) + 3600  // 1 hour expiry
+                });
+                console.log('Generated private download URL for:', parsed.publicId);
+                console.log('Fetch URL:', fetchUrl);
             } catch (signError) {
-                console.warn('Could not generate signed URL, using original:', signError.message);
+                console.warn('Could not generate private download URL:', signError.message);
+                // Fall back to original URL
             }
         }
 
-        // Fetch the file from Cloudinary using the signed URL
+        // Fetch the file from Cloudinary
+        console.log('Fetching from:', fetchUrl);
         const response = await fetch(fetchUrl);
 
         if (!response.ok) {
-            // If signed URL fails, try original URL as fallback
-            if (fetchUrl !== url) {
-                console.log('Signed URL failed, trying original URL...');
-                const fallbackResponse = await fetch(url);
-                if (fallbackResponse.ok) {
-                    const contentType = fallbackResponse.headers.get('content-type') || 'application/octet-stream';
-                    res.setHeader('Content-Type', contentType);
-                    res.setHeader('Content-Disposition', 'inline');
-                    res.setHeader('Cache-Control', 'public, max-age=3600');
-                    const buffer = await fallbackResponse.arrayBuffer();
-                    return res.send(Buffer.from(buffer));
-                }
+            // Try original URL as fallback
+            console.log('Signed URL failed with:', response.status, ', trying original...');
+            const fallbackResponse = await fetch(url);
+
+            if (!fallbackResponse.ok) {
+                console.error(`Failed to fetch file: ${fallbackResponse.status} ${fallbackResponse.statusText}`);
+                return res.status(fallbackResponse.status).json({
+                    success: false,
+                    message: `Failed to fetch file: ${fallbackResponse.statusText}`
+                });
             }
 
-            console.error(`Failed to fetch file: ${response.status} ${response.statusText}`);
-            return res.status(response.status).json({
-                success: false,
-                message: `Failed to fetch file: ${response.statusText}`
-            });
+            // Use fallback response
+            const contentType = fallbackResponse.headers.get('content-type') || 'application/octet-stream';
+            const disposition = download === 'true' ? 'attachment' : 'inline';
+            res.setHeader('Content-Type', contentType);
+            res.setHeader('Content-Disposition', disposition);
+            res.setHeader('Cache-Control', 'public, max-age=3600');
+            const buffer = await fallbackResponse.arrayBuffer();
+            return res.send(Buffer.from(buffer));
         }
 
         // Get content type from response
         const contentType = response.headers.get('content-type') || 'application/octet-stream';
 
-        // Set headers for inline viewing (not download)
+        // Set headers based on mode (inline view or download)
+        const disposition = download === 'true' ? 'attachment' : 'inline';
         res.setHeader('Content-Type', contentType);
-        res.setHeader('Content-Disposition', 'inline');
-        res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+        res.setHeader('Content-Disposition', disposition);
+        res.setHeader('Cache-Control', 'public, max-age=3600');
 
         // Stream the response to client
         const buffer = await response.arrayBuffer();
