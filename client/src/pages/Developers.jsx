@@ -1,5 +1,5 @@
 import React from 'react';
-import { Github, Linkedin, Twitter, Sparkles, Code2, Globe } from 'lucide-react';
+import { Github, Linkedin, Twitter, Sparkles, Code2, Globe, Mail } from 'lucide-react';
 
 const SocialLink = ({ href, icon: Icon, label }) => (
     <a
@@ -25,7 +25,7 @@ const DeveloperCard = ({ dev, index }) => {
                     <img
                         src={dev.image}
                         alt={dev.name}
-                        className="w-full h-full object-cover rounded-2xl shadow-lg grayscale hover:grayscale-0 transition-all duration-700 ease-in-out"
+                        className={`w-full h-full object-cover rounded-2xl shadow-lg grayscale hover:grayscale-0 transition-all duration-700 ease-in-out ${dev.role === "Lead Developer" ? "" : "object-top"}`}
                     />
                     {/* Decorative Background Element */}
                     <div className={`absolute -bottom-4 ${isEven ? '-left-4' : '-right-4'} w-full h-full border-2 border-primary-100 dark:border-primary-900/30 rounded-2xl -z-10 hidden md:block`}></div>
@@ -75,6 +75,7 @@ const DeveloperCard = ({ dev, index }) => {
                             {dev.links.linkedin && <SocialLink href={dev.links.linkedin} icon={Linkedin} label="LinkedIn" />}
                             {dev.links.twitter && <SocialLink href={dev.links.twitter} icon={Twitter} label="X (Twitter)" />}
                             {dev.links.website && <SocialLink href={dev.links.website} icon={Globe} label="Website" />}
+                            {dev.links.email && <SocialLink href={`mailto:${dev.links.email}`} icon={Mail} label="Email" />}
                         </div>
                     </div>
                 </div>
@@ -108,16 +109,16 @@ export default function Developers() {
             role: "Secondary Developer",
             image: "/images/rishabh.jpeg?v=1",
             bio: "Building the robust infrastructure that powers Stashly. I specializes in database optimization, API security, and high-performance server logic.",
-            skills: ["Express", "MongoDB", "HTML"],
-            links: { github: "#", twitter: "#" }
+            skills: ["Express", "MongoDB", "JS"],
+            links: { github: "https://github.com/RishabhMalviya75", linkedin: "https://www.linkedin.com/in/rishabh-malviya-59713b318/", website: "https://rishabhmalviya75.github.io/Portfolio/" }
         },
         {
             name: "Prof. Sudha Kore",
             role: "Project Mentor",
-            image: "--",
-            bio: "To be updated",
+            image: "/images/mentor.jpeg?v=1",
+            bio: "Guiding the next generation of developers with wisdom and experience. As our project mentor, I provide strategic direction and mentorship to help the team achieve excellence in their technical endeavors.",
             skills: ["Leadership", "Strategy", "Mentorship"],
-            links: { linkedin: "#", website: "#" }
+            links: { linkedin: "https://www.linkedin.com/in/sudha-kore-6a15a9373", email: "sudhakore@gmail.com" }
         }
     ];
 
