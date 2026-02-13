@@ -123,4 +123,13 @@ export const uploadAPI = {
     delete: (publicId) => api.delete(`/upload/${encodeURIComponent(publicId)}`)
 };
 
+// =====================
+// AI API Functions
+// =====================
+
+export const aiAPI = {
+    // Generate a title for a resource using AI
+    generateTitle: (data) => api.post('/ai/generate-title', data),
+};
+
 export default api;

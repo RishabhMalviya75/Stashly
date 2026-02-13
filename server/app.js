@@ -179,6 +179,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/folders', require('./routes/folders'));
 app.use('/api/resources', require('./routes/resources'));
 app.use('/api/upload', require('./routes/upload'));
+app.use('/api/ai', require('./routes/ai'));
 
 // ==============
 // ERROR HANDLERS

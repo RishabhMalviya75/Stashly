@@ -29,9 +29,10 @@ import {
     FolderOpen,
     Upload,
     File,
-    Trash2
+    Trash2,
+    Wand2
 } from 'lucide-react';
-import { resourceAPI, folderAPI, uploadAPI } from '../services/api';
+import { resourceAPI, folderAPI, uploadAPI, aiAPI } from '../services/api';
 
 // Resource type configuration
 const RESOURCE_TYPES = [
@@ -53,6 +54,7 @@ export default function ResourceModal({
     const [selectedType, setSelectedType] = useState(defaultType);
     const [folders, setFolders] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
 
     // File upload state
     const [uploadedFile, setUploadedFile] = useState(null);
@@ -66,8 +68,57 @@ export default function ResourceModal({
         handleSubmit,
         reset,
         setValue,
+        watch,
         formState: { errors }
     } = useForm();
+
+    // Watch fields to determine if generate title button should be enabled
+    const watchedContent = watch('content');
+    const watchedUrl = watch('url');
+    const watchedFileName = watch('fileName');
+
+    // Generate title using AI
+    const handleGenerateTitle = async () => {
+        setIsGeneratingTitle(true);
+        try {
+            const payload = { type: selectedType };
+
+            switch (selectedType) {
+                case 'bookmark':
+                    payload.url = watchedUrl;
+                    break;
+                case 'prompt':
+                case 'snippet':
+                case 'note':
+                    payload.content = watchedContent;
+                    break;
+                case 'document':
+                    payload.fileName = watchedFileName || uploadedFile?.fileName;
+                    break;
+            }
+
+            const response = await aiAPI.generateTitle(payload);
+            setValue('title', response.data.data.title);
+            toast.success('Title generated!');
+        } catch (error) {
+            console.error('Generate title error:', error);
+            toast.error(error.response?.data?.message || 'Failed to generate title');
+        } finally {
+            setIsGeneratingTitle(false);
+        }
+    };
+
+    // Check if generate button should be enabled
+    const canGenerateTitle = () => {
+        switch (selectedType) {
+            case 'bookmark': return !!watchedUrl;
+            case 'prompt':
+            case 'snippet':
+            case 'note': return !!watchedContent;
+            case 'document': return !!(watchedFileName || uploadedFile?.fileName);
+            default: return false;
+        }
+    };
 
     // Fetch folders on mount
     useEffect(() => {
@@ -325,9 +376,29 @@ export default function ResourceModal({
                     <div className="p-4 space-y-4">
                         {/* Title - All types */}
                         <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Title <span className="text-red-500">*</span>
-                            </label>
+                            <div className="flex items-center justify-between mb-1">
+                                <label className="block text-sm font-medium">
+                                    Title <span className="text-red-500">*</span>
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={handleGenerateTitle}
+                                    disabled={isGeneratingTitle || !canGenerateTitle()}
+                                    className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-lg transition-all
+                                        ${canGenerateTitle() && !isGeneratingTitle
+                                            ? 'bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:from-violet-600 hover:to-purple-700 shadow-sm hover:shadow-md'
+                                            : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-400 cursor-not-allowed'
+                                        }`}
+                                    title={canGenerateTitle() ? 'Auto-generate title with AI' : 'Add content first to generate a title'}
+                                >
+                                    {isGeneratingTitle ? (
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    ) : (
+                                        <Wand2 className="w-3.5 h-3.5" />
+                                    )}
+                                    {isGeneratingTitle ? 'Generating...' : '✨ AI Title'}
+                                </button>
+                            </div>
                             <input
                                 {...register('title', { required: 'Title is required' })}
                                 type="text"
